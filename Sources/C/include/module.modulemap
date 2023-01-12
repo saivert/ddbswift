@@ -1,0 +1,4 @@
+module ddbswift_C {
+    header "deadbeef.h"
+    export *
+}
