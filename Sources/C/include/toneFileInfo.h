@@ -5,7 +5,8 @@
 typedef struct {
     DB_fileinfo_t info;
     int frequency;
-    double m_time;
+
+    float m_phase;
     DB_FILE *file;
 
 } toneFileInfo;

@@ -91,14 +91,18 @@ func read(info: UnsafeMutablePointer<DB_fileinfo_t>?, bytes: UnsafeMutablePointe
         return 0
     }
 
-    let freq = Double(toneinfo.pointee.frequency)
+    let freq = Float(toneinfo.pointee.frequency)
+    let cap = Int(size)/MemoryLayout<Float>.size
 
-    bytes!.withMemoryRebound(to: Int16.self, capacity: Int(size/2), {(a) in
-        for sample in 0 ..< size/2  {
-            a[Int(sample)] = Int16( sin(toneinfo.pointee.m_time * Double.pi * freq ) * 32768/4 )
-            a[Int(sample+1)] = Int16( sin(toneinfo.pointee.m_time * Double.pi * freq ) * 32768/4 )
+    bytes!.withMemoryRebound(to: Float.self, capacity: cap, {(a) in
+        for sample in 0 ..< cap {
 
-            toneinfo.pointee.m_time += 1 / 48000
+            let samplevalue = sin(toneinfo.pointee.m_phase * Float.pi * 2)
+            toneinfo.pointee.m_phase += freq / 48000 / 2;
+            toneinfo.pointee.m_phase -= floor(toneinfo.pointee.m_phase);
+
+            a[sample] = Float(samplevalue * 0.5)
+            a[sample+1] = Float(samplevalue * 0.5)
         }
     })
 
@@ -139,10 +143,10 @@ var inputplg = DB_decoder_t(
 
             toneinfo.pointee.info.readpos = 0
 
-            toneinfo.pointee.info.fmt.bps = 16
+            toneinfo.pointee.info.fmt.bps = 32
             toneinfo.pointee.info.fmt.channelmask = 3
             toneinfo.pointee.info.fmt.channels = 2
-            toneinfo.pointee.info.fmt.is_float = 0
+            toneinfo.pointee.info.fmt.is_float = 1
             toneinfo.pointee.info.fmt.is_bigendian = 0
             toneinfo.pointee.info.fmt.samplerate = 48000
 
