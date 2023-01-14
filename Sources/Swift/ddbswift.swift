@@ -2,37 +2,16 @@
 @_exported import ddbswift_C
 import Foundation
 
-public struct plugin {
-
-    public init() {
-    }
-
-    public func start() -> Int32 {
-        return 0
-    }
-
-    public func stop() -> Int32 {
-        return 0
-    }
-
-    public func message(id: UInt32, ctx: UInt, p1: UInt32, p2: UInt32) -> Int32 {
-        if id == DB_EV_SONGCHANGED {
-            // seek(1000)
-        }
-        return 0
-    }
-}
-
 func start() -> Int32 {
-    plginstance.start()
+    0
 }
 
 func stop() -> Int32 {
-    plginstance.stop()
+    0
 }
 
 func message(id: UInt32, ctx: UInt, p1: UInt32, p2: UInt32) -> Int32 {
-    plginstance.message(id: id, ctx: ctx, p1: p1, p2: p2)
+    0
 }
 
 enum Constants {
@@ -180,7 +159,7 @@ var inputplg = DB_decoder_t(
                 let freq = contents.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
 
                 let it = deadbeef.pl_item_alloc_init(fname, plug.id)!
-                deadbeef.pl_add_meta (it, ":FILE_SIZE", "10000")
+                // deadbeef.pl_add_meta (it, ":FILE_SIZE", "10000")
                 deadbeef.pl_add_meta (it, ":FILETYPE", "tone")
                 deadbeef.pl_add_meta (it, ":CHANNELS", "2")
                 deadbeef.pl_add_meta (it, ":BPS", "16")
@@ -188,7 +167,7 @@ var inputplg = DB_decoder_t(
                 deadbeef.pl_add_meta (it, "artist", "the tone generators")
                 deadbeef.pl_add_meta (it, "title", "Frequency \(freq)")
                 deadbeef.pl_add_meta (it, "frequency", freq)
-                deadbeef.pl_set_meta_int (it, ":BITRATE", 705600)
+                // deadbeef.pl_set_meta_int (it, ":BITRATE", 705600)
                 let after =  deadbeef.plt_insert_item (plt, after, it)
                 deadbeef.pl_item_unref(it)
                 return after
@@ -219,14 +198,12 @@ var inputplg = DB_decoder_t(
     )
 
 var deadbeef : DB_functions_t!
-var plginstance : plugin!
 
 var exts = UnsafeMutablePointer<UnsafePointer<CChar>?>.allocate(capacity: 2)
 
 @_cdecl("libddbswift_load") func libddbswift_load(api: UnsafePointer<DB_functions_t>) -> UnsafeMutablePointer<DB_decoder_t> {
 
     deadbeef = api.pointee
-    plginstance = plugin()
 
     exts.initialize(repeating: nil, count: 2)
     exts[0] = Constants.prefix.utf8String
