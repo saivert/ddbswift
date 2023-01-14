@@ -116,18 +116,19 @@ var inputplg = DB_decoder_t(
                 }
             }
 
+
             toneinfo.pointee.info.plugin = UnsafeMutablePointer<DB_decoder_t>(&inputplg)
 
-            // toneinfo.pointee.it = it
 
             toneinfo.pointee.info.readpos = 0
 
-            toneinfo.pointee.info.fmt.bps = 32
-            toneinfo.pointee.info.fmt.channelmask = 3
-            toneinfo.pointee.info.fmt.channels = 2
-            toneinfo.pointee.info.fmt.is_float = 1
-            toneinfo.pointee.info.fmt.is_bigendian = 0
-            toneinfo.pointee.info.fmt.samplerate = 48000
+            toneinfo.pointee.info.fmt = ddb_waveformat_t(
+                bps: 32,
+                channels: 2,
+                samplerate: 48000,
+                channelmask: 3,
+                is_float: 1,
+                is_bigendian: 0)
 
             return 0
         },
