@@ -1,4 +1,5 @@
 module ddbswift_C {
     header "deadbeef.h"
+    header "toneFileInfo.h"
     export *
 }
