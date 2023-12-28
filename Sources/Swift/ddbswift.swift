@@ -42,7 +42,6 @@ var plug = DB_plugin_t(
     start: start,
     stop: stop,
     connect: { () -> Int32 in
-        print("Swift: Connect called!")
         return 0
     },
     disconnect: nil,
@@ -65,7 +64,6 @@ func allocToneFileInfo() -> UnsafeMutablePointer<toneFileInfo> {
 func read(
     info: UnsafeMutablePointer<DB_fileinfo_t>?, bytes: UnsafeMutablePointer<CChar>?, size: Int32
 ) -> Int32 {
-    // print("swift: read")
     let toneinfo = UnsafeMutablePointer<toneFileInfo>(OpaquePointer(info))!
 
     if size <= 0 {
@@ -80,7 +78,7 @@ func read(
         { (a) in
             for sample in 0..<cap {
 
-                let samplevalue = sin(toneinfo.pointee.m_phase * Float.pi * 2)
+                let samplevalue = sin(toneinfo.pointee.m_phase * 2 * Float.pi)
                 toneinfo.pointee.m_phase += freq / 48000 / 2
                 toneinfo.pointee.m_phase -= floor(toneinfo.pointee.m_phase)
 
@@ -97,14 +95,12 @@ func read(
 var inputplg = DB_decoder_t(
     plugin: plug,
     open: { (hints: UInt32) -> UnsafeMutablePointer<DB_fileinfo_t>? in
-        print("swift: open")
         let ptr = allocToneFileInfo()
         return UnsafeMutablePointer<DB_fileinfo_t>(OpaquePointer(ptr))
     },
     init: {
         (info: UnsafeMutablePointer<DB_fileinfo_t>?, it: UnsafeMutablePointer<DB_playItem_t>?)
             -> Int32 in
-        print("swift: init")
         let toneinfo = UnsafeMutablePointer<toneFileInfo>(OpaquePointer(info))!
 
         if toneinfo.pointee.file == nil {
@@ -117,7 +113,6 @@ var inputplg = DB_decoder_t(
             toneinfo.pointee.frequency = deadbeef.pl_find_meta_int(it, "frequency", 440)
 
             if toneinfo.pointee.file == nil {
-                print("failed to open file ", uri)
                 return -1
             }
         }
@@ -137,7 +132,6 @@ var inputplg = DB_decoder_t(
         return 0
     },
     free: { (info: UnsafeMutablePointer<DB_fileinfo_t>?) -> Void in
-        print("swift: free")
         if let toneinfo = UnsafeMutablePointer<toneFileInfo>(OpaquePointer(info)) {
             if toneinfo.pointee.file != nil {
                 deadbeef.fclose(toneinfo.pointee.file)
@@ -160,8 +154,11 @@ var inputplg = DB_decoder_t(
             plt: UnsafeMutablePointer<ddb_playlist_t>?, after: UnsafeMutablePointer<DB_playItem_t>?,
             fname: UnsafePointer<CChar>?
         ) -> UnsafeMutablePointer<DB_playItem_t>? in
-        let fname_string = fname.map { String(cString: $0) } ?? ""
-        print("swift: insert" + (fname.map { " " + String(cString: $0) } ?? ""))
+        guard let fname_string = fname.map({ String(cString: $0) }) else {
+            return nil
+        }
+
+        print("swift: insert \(fname_string)")
 
         do {
             var contents = try String(contentsOfFile: fname_string, encoding: String.Encoding.utf8)
@@ -189,12 +186,34 @@ var inputplg = DB_decoder_t(
     numvoices: nil,
     mutevoice: nil,
     read_metadata: { (it: UnsafeMutablePointer<DB_playItem_t>?) -> Int32 in
-        print("swift: read metadata")
+        deadbeef.pl_lock()
+        let uri = String(cString: deadbeef.pl_find_meta(it, ":URI")!)
+        deadbeef.pl_unlock()
+        do {
+            let freq = try String(contentsOfFile: uri, encoding: String.Encoding.utf8)
+            deadbeef.pl_delete_all_meta(it)
+            deadbeef.pl_add_meta(it, "artist", "the tone generators")
+            deadbeef.pl_add_meta(it, "frequency", freq)
+            deadbeef.pl_add_meta(it, "title", "Frequency \(freq)")
+        } catch {
+            return -1
+        }
         return 0
     },
     write_metadata: { (it: UnsafeMutablePointer<DB_playItem_t>?) -> Int32 in
-        print("swift: write metadata")
-        return 0
+        deadbeef.pl_lock()
+        let uri = String(cString: deadbeef.pl_find_meta(it, ":URI")!)
+        deadbeef.pl_unlock()
+        
+        let freq = deadbeef.pl_find_meta_int(it, "frequency", 440)
+        let freqstring = "\(freq)"
+        do {
+            try freqstring.write(to: URL.init(fileURLWithPath: uri), atomically: true, encoding: String.Encoding.utf8)
+        } catch {
+            return -1
+        }
+
+        return 1
     },
     exts: nil,
     prefixes: nil,
