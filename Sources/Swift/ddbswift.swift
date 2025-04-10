@@ -229,7 +229,7 @@ var deadbeef: DB_functions_t!
 
 var exts = UnsafeMutablePointer<UnsafePointer<CChar>?>.allocate(capacity: 2)
 
-@_cdecl("libddbswift_load") public func libddbswift_load(api: UnsafePointer<DB_functions_t>)
+@_cdecl("ddbswift_load") public func libddbswift_load(api: UnsafePointer<DB_functions_t>)
     -> UnsafeMutablePointer<DB_decoder_t>
 {
 
